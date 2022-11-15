@@ -161,7 +161,9 @@ class IMDbURLopener:
         self.addheaders = []
         for header in ('User-Agent', 'User-agent', 'user-agent'):
             self.del_header(header)
-        self.set_header('User-Agent', 'Mozilla/5.0')
+
+        #this user agent produces consistent responses
+        self.set_header('User-Agent', 'python-requests')
         lang = kwargs.get('languages', 'en-us,en;q=0.5')
         self.set_header('Accept-Language', lang)
 

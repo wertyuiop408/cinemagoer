@@ -40,15 +40,23 @@ class DOMHTMLSearchMovieParser(DOMParserBase):
         Rule(
             key='data',
             extractor=Rules(
-                foreach='//td[@class="result_text"]',
+                foreach='//li[contains(@class, "find-result-item")]',
                 rules=[
                     Rule(
                         key='link',
-                        extractor=Path('./a/@href', reduce=reducers.first)
+                        extractor=Path('./div[contains(@class, "ipc-metadata-list-summary-item__c")]/div/a/@href')
                     ),
                     Rule(
                         key='info',
-                        extractor=Path('.//text()')
+                        extractor=Path('./div[2]/div[contains(@class, "ipc-metadata-list-summary-item__tc")]/a//text()')
+                    ),
+                    Rule(
+                        key='year',
+                        extractor= Path('./div[2]/div[contains(@class, "ipc-metadata-list-summary-item__tc")]/ul[1]/li[1]//text()')
+                    ),
+                    Rule(
+                        key='type',
+                        extractor=Path('./div[2]/div[contains(@class, "ipc-metadata-list-summary-item__tc")]/ul[1]/li[2]//text()')
                     ),
                     Rule(
                         key='akas',
@@ -56,12 +64,16 @@ class DOMHTMLSearchMovieParser(DOMParserBase):
                     ),
                     Rule(
                         key='cover url',
-                        extractor=Path('../td[@class="primary_photo"]/a/img/@src')
+                        extractor=Path('./div[1]/div[contains(@class, "ipc-media__img")]/img/@src')
                     )
                 ],
                 transform=lambda x: (
                     analyze_imdbid(x.get('link')),
-                    analyze_title(x.get('info', '')),
+                    analyze_title(pre_title(
+                        x.get('info', ''),
+                        x.get('year', ''),
+                        x.get('type', '')
+                        )),
                     x.get('akas'),
                     x.get('cover url')
                 )
@@ -101,6 +113,14 @@ class DOMHTMLSearchMovieParser(DOMParserBase):
     def add_refs(self, data):
         return data
 
+def pre_title(title, year, type_):
+    # join the title, year and movie type before the title is analyzed
+    if year != '':
+        year = f'({year})'
+
+    if type_ != '':
+        type_ = f'({type_})'
+    return ' '.join([title, year, type_])
 
 _OBJECTS = {
     'search_movie_parser': ((DOMHTMLSearchMovieParser,), None)
